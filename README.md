@@ -102,7 +102,7 @@ You will be able to monitor the traffic going to and from the SUT.
 You should be good to go! Run a validation pass to make sure all the plumbing is working with:
 
 ```
-mono Peach.exe -1 HTTP2_Client.xml
+mono Peach.exe --plugins=. -1 HTTP2_Client.xml
 ```
 You should see Edge start, a page load and then edge close. 
 
@@ -110,5 +110,5 @@ You should see Edge start, a page load and then edge close.
 If all goes well you should be ready to start fuzzing by dropping the ```-1``` argument:
 
 ```
-mono Peach.exe HTTP2_Client.xml
+mono Peach.exe --plugins=. HTTP2_Client.xml
 ```
