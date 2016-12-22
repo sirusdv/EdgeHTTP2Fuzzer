@@ -7,7 +7,7 @@ This peach pit implements the HTTP/2 protocol ([RFC-7540](https://tools.ietf.org
 
 -- [@sirus](https://twitter.com/sirus)
 
- ## Details
+## Details
  
  
 #### HPACK_src/**
@@ -29,10 +29,10 @@ Contains Peach state model for driving testing of Edge.
 #### HTTP2_Client.xml
 Contains agent configurations and the fuzzer run configuration. Defaults to using MSCER-2 monitoring but direct ```WindowsDebugger``` monitors are available.
  
- #### mscer2*.py
+#### mscer2*.py
 As Edge launches five separate processes per fuzzing iteration attaching to all of them takes a significant amount of time.  As an alternative I've implemented a [MSCER-2](https://msdn.microsoft.com/en-us/library/dd942170.aspx) monitor. MSCER-2 is the Windows Error Reporting protocol. Details on how to leverage this can be found [here](https://duo.com/blog/remote-fuzzer-monitoring-with-windows-error-reporting-wer).
  
- ## Fuzzer Configuration
+## Fuzzer Configuration
 In this section SUT (system under test) will refer to a Windows 10 host that is to be running Edge with an IP of ```10.23.1.74```. Host will refer to the system running Peach.exe with the IP of ```10.23.1.53```.
 
 ### SUT Preparation
