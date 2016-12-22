@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Peach xmlns="http://peachfuzzer.com/2012/Peach"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://peachfuzzer.com/2012/Peach peach.xsd"
+       author="Mikhail Davidov @sirus mdavidov@duo.com"
+       description="HTTP/2 Fuzzer"
+       version="1.0">
+       
+       
+       <Include ns="HTTP2" src="file:##Peach.Cwd##/HTTP2_State.xml" />
+       
+       
+       
+       <Agent name="RemoteAgent" location="tcp://10.23.1.74:9001"> <!-- Change to IP of SUT-->
+       		
+       		
+       		<Monitor class="RunCommand" name="StartEdgeCommnad">   		
+				<Param name="Command" value="edgedbg.exe" />
+				<Param name="Arguments" value="https://TARGET:8182" />
+				<Param name="StartOnCall" value="StartLauncher" />
+				<Param name="When" value="OnCall" />
+			</Monitor>
+			
+				
+       		<Monitor class="RunCommand" name="KillEdgeCommand">   		
+				<Param name="Command" value="taskkill.exe" />
+				<Param name="Arguments" value="/f /im microsoftedge.exe  /im microsoftedgecp.exe /im runtimebroker.exe /im browser_broker.exe /im applicationframehost.exe" />
+				<Param name="StartOnCall" value="KillEdge" />
+				<Param name="When" value="OnCall" />
+			</Monitor>
+			
+	       	<Monitor class="RunCommand" name="SoftKillEdgeCommand">   		
+				<Param name="Command" value="taskkill.exe" />
+				<Param name="Arguments" value="/im microsoftedge.exe  /im microsoftedgecp.exe /im runtimebroker.exe /im browser_broker.exe /im applicationframehost.exe" />
+				<Param name="StartOnCall" value="SoftKillEdge" />
+				<Param name="When" value="OnCall" />
+			</Monitor>
+			
+
+       		<!--  These monitors are commented out as MSCER reporting is much faster than attaching to 5 processes. -->
+
+      		<!-- Monitor class="WindowsDebugger" name="RuntimeBrokerMonitor">
+       			<Param name="ProcessName" value="runtimebroker" />
+       			<Param name="WinDbgPath" value="c:\Program Files (x86)\Windows Kits\10\Debuggers\x64\" />
+       			<Param name="RestartOnEachTest" value="true" />
+       			<Param name="WaitForExitTimeout" value="0" />
+       			<Param name="StartOnCall" value="StartDebugger" />
+       		</Monitor>
+
+      		<Monitor class="WindowsDebugger" name="BrowserBrokerMonitor">
+       			<Param name="ProcessName" value="browser_broker" />
+       			<Param name="WinDbgPath" value="c:\Program Files (x86)\Windows Kits\10\Debuggers\x64\" />
+       			<Param name="RestartOnEachTest" value="true" />
+       			<Param name="WaitForExitTimeout" value="0" />
+       			<Param name="StartOnCall" value="StartDebugger" />
+       		</Monitor>
+
+      		<Monitor class="WindowsDebugger" name="ApplicationFrameHostMonitor">
+       			<Param name="ProcessName" value="applicationframehost" />
+       			<Param name="WinDbgPath" value="c:\Program Files (x86)\Windows Kits\10\Debuggers\x64\" />
+       			<Param name="RestartOnEachTest" value="true" />
+       			<Param name="WaitForExitTimeout" value="0" />
+       			<Param name="StartOnCall" value="StartDebugger" />
+       		</Monitor>
+       		
+       		<Monitor class="WindowsDebugger" name="EdgeMonitor">
+       			<Param name="ProcessName" value="MicrosoftEdge" />
+       			<Param name="WinDbgPath" value="c:\Program Files (x86)\Windows Kits\10\Debuggers\x64\" />
+       			<Param name="RestartOnEachTest" value="true" />
+       			<Param name="WaitForExitTimeout" value="0" />
+       			<Param name="StartOnCall" value="StartDebugger" />
+       		</Monitor>
+
+       		<Monitor class="WindowsDebugger" name="EdgeCPMonitor">
+       			<Param name="ProcessName" value="MicrosoftEdgeCP" />
+       			<Param name="WinDbgPath" value="c:\Program Files (x86)\Windows Kits\10\Debuggers\x64\" />
+       			<Param name="RestartOnEachTest" value="true" />
+       			<Param name="StartOnCall" value="StartDebugger" />
+       		</Monitor-->
+       </Agent>
+       
+       
+       <Agent name="LocalAgent">
+       		<Monitor name="MSCER2Monitor" class="MSCER2Monitor">
+       			<Param name="Triggers" value="MicrosoftEdge.exe;MicrosoftEdgeCP.exe;ApplicationFrameHost.exe;browser_broker.exe;RuntimeBroker.exe" />
+       			<Param name="Port" value="8881" />
+       			<Param name="Host" value="10.23.1.53" /> <!--  CHANGE TO IP TO HOST. -->
+       		</Monitor>
+       </Agent>
+
+       
+       <Test name="Default" maxOutputSize="500000" targetLifetime="iteration">
+       		<Agent ref="RemoteAgent" />
+       		<Agent ref="LocalAgent" />
+       		<StateModel ref="HTTP2:Server"/>
+       		<Publisher class="TcpListener" name="TcpHandler">
+       			<Param name="Interface" value="127.0.0.1" />
+       			<Param name="Port" value="1234" />
+       			<Param name="AcceptTimeout" value="10000" />
+       			<Param name="Timeout" value="3000" />
+       		</Publisher>
+       		
+       		<Logger class="File">
+    			<Param name="Path" value="fuzzlog" />
+			</Logger>
+       </Test>
+       
+       
+</Peach>

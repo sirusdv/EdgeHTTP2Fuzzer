@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Peach xmlns="http://peachfuzzer.com/2012/Peach"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://peachfuzzer.com/2012/Peach peach.xsd"
+       author="Mikhail Davidov @sirus mdavidov@duo.com"
+       description="HTTP/2 Fuzzer"
+       version="1.0">
+       
+       <Defaults>
+	      <Number signed="false" endian="big" />
+       </Defaults>
+       
+       <DataModel name="HPACKStringLiteral">
+  			<Choice name="HuffmanChoice">
+				<Block name="NoHuff">
+					<Number name="HuffmanFlag" size="1" value="0" token="true"/>
+					<HPACKInteger name="LiteralValueLength" prefixBits="7">
+   		   				<Relation type="size" of="LiteralValue" />
+      					</HPACKInteger>
+      					
+      					<String name="LiteralValue"/>
+
+				</Block>
+				<Block name="WithHuff">
+					<Number name="HuffmanFlag" size="1" value="1" token="true"/>
+	       			<HPACKInteger name="LiteralValueLength" prefixBits="7">
+   		   				<Relation type="size" of="LiteralValue" />
+      					</HPACKInteger>
+      					
+      					<String name="LiteralValue">
+      						<Transformer class="HuffmanTransformer"/>
+      					</String>
+				</Block>
+			</Choice>
+       </DataModel>
+       
+       <DataModel name="HeaderData">
+       	<Block name="HeaderCollection" minOccurs="0" maxOccurs="-1">
+       		<Choice name="TypeChoice">
+       			
+       			
+       			<Block name="IndexedHeaderChoice">
+       				<Number name="IndexedFlag" size="1" value="1" token="true" />
+       				<HPACKInteger name="Index" prefixBits="7" />
+       			</Block>
+       			
+       		       			
+      			
+       			
+       			<Block name="IndexedLiteralHeaderChoice">
+	       			<Number name="IndexedFlag" size="1" value="0" token="true" />
+	       			<Number name="LiteralIndexFlag" size="1" value="1" token="true" />
+	       			
+	       			<HPACKInteger name="Index" prefixBits="6" />
+	       			
+	       			<Choice name="ChoiceHaveIndex">
+	       				<Block name="NoIndex" constraint="int(self.find('Index').DefaultValue) == 0">	
+							<Block name="HeaderName" ref="HPACKStringLiteral" />
+	       				</Block>
+	       				<Block name="HaveIndex" />	
+	       			</Choice>
+	       			
+	       			<Block name="HeaderValue" ref="HPACKStringLiteral" />
+     			
+       			</Block>
+
+
+
+        		<Block name="EncodingUpdateHeaderChoice">
+	       			<Number name="IndexedFlag" size="1" value="0" token="true"/>
+	       			<Number name="LiteralIndexFlag" size="1" value="0" token="true"/>
+	       			<Number name="EncodingUpdateFlag" size="1" value="1" token="true" />
+	       			<HPACKInteger name="NewEncodingSize" prefixBits="5" />
+	       			
+       			</Block>
+       			
+       			<Block name="LiteralHeaderChoise">
+       				<Number name="IndexedFlag" size="1" value="0" token="true"/>
+	       			<Number name="LiteralIndexFlag" size="1" value="0" token="true"/>
+	       			<Number name="EncodingUpdateFlag" size="1" value="0" token="true" />
+	       			<Number name="NotIndexable" size="1" />
+	       			
+	       			<Choice name="HaveHeaderNameIndex">
+		       			<Block name="NoIndex">
+		       				<Number name="IndexedName" size="4" value="0" token="true"/>
+	    	   				<Block name="HeaderName" ref="HPACKStringLiteral" />
+	       				</Block>
+	       			
+	       				<Block name="HaveIndex">
+	       					<HPACKInteger name="IndexedName" prefixBits="4" />
+		       			</Block>
+	       			</Choice>
+	       			
+	       			<Block name="HeaderValue" ref="HPACKStringLiteral" />
+       			</Block>
+       			
+
+       			
+       		</Choice>
+       	
+       	</Block>
+       </DataModel>
+       
+      <DataModel name="Magic">
+      	<Blob name="Magic" value="PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" token="true" />
+      </DataModel>
+      
+      <DataModel name="Frame">
+      	<Number size="24" name="Length">
+      		<Relation type="size" of="Payload"/>
+      	</Number>
+      	<Number size="8" name="Type" />
+      	<Number size="8" name="Flags" />
+      	<Number size="1" name="R" value="0" token="true" />
+      	<Number size="31" name="SID" />
+      	
+      	<Blob name="Payload" /> 	
+      	
+      </DataModel>
+      
+      
+      <DataModel name="DATA" ref="Frame">
+      	<Number size="8" name="Type" value="0x0" token="true" />
+      	<Flags name="Flags" size="8">
+      		<Flag name="END_STREAM" position="0" size="1"/>
+      		<Flag name="PADDED" position="3" size="1"/>
+      	</Flags>
+      	<Block name="Payload">
+      		<Choice name="PaddingChoice">
+      			<Block name="NoPad" constraint="int(self.find('Flags.PADDED').DefaultValue) == 0"/>
+      			<Block name="WithPad">
+      				<Number name="PaddingLength" size="8">
+      					<Relation type="size" of="Padding"/>
+      				</Number> 
+      				<Blob name="Padding" mutable="false">
+      					<Placement after="DATA"/>
+      				</Blob>
+      			</Block>
+      		</Choice>
+      		
+      		<Blob name="DATA" />
+      		
+      	</Block>
+      </DataModel>
+      
+      <DataModel name="HEADERS" ref="Frame">
+      	<Number size="8" name="Type" value="0x1" token="true" />
+      	<Flags name="Flags" size="8">
+      		<Flag name="END_STREAM" position="0" size="1" />
+      		<Flag name="END_HEADERS" position="2" size="1" />
+      		<Flag name="PADDED" position="3" size="1" />
+      		<Flag name="PRIORITY" position="5" size="1" />
+      	</Flags>
+      	<Block name="Payload">
+      	
+      		<Choice name="PaddingChoice">
+      			<Block name="NoPad" constraint="int(self.find('Flags.PADDED').DefaultValue) == 0"/>
+      			<Block name="WithPad">
+      				<Number name="PadLength" size="8">
+      					<Relation type="size" of="Padding" />
+      				</Number>
+      				<Blob name="Padding">
+      					<Placement after="HeaderBlockFragment"/>
+      				</Blob>
+      			</Block>
+      		</Choice>
+      		
+      		<Choice name="PriorityChoice">
+      			<Block name="NoPriority" constraint="int(self.find('Flags.PRIORITY').DefaultValue) == 0"/>
+      			<Block name="WithPriority">
+      				<Number name="E" size="1" />
+      				<Number name="StreamDependency" size="31" />
+      				<Number name="Weight" size="8" />
+      			</Block>
+      		</Choice>
+      	     	
+      	    <Block name="HeaderBlockFragment" ref="HeaderData"/>
+      	
+      	</Block>
+      </DataModel>
+      
+      <DataModel name="PRIORITY" ref="Frame">
+      	<Number size="8" name="Type" value="0x2" token="true" />
+      	<Block name="Payload">
+      		<Number name="E" size="1"/>
+      		<Number name="StreamDependency" size="31" />
+      		<Number name="Weight" size="8" />
+      	</Block>
+      </DataModel>
+      
+      <DataModel name="RST_STREAM" ref="Frame">
+      	<Number size="8" name="Type" value="0x3" token="true" />
+      	<Block name="Payload">
+      		<Number name="ErrorCode" size="32" />
+      	</Block>
+      </DataModel>
+      
+      
+      
+      
+      
+      <DataModel name="GenericSetting">
+      	<Number size="16" name="Id" />
+      	<Number size="32" name="Value" />
+      </DataModel>
+      
+      
+      <DataModel name="SETTINGS" ref="Frame">
+      	<Number size="8" name="Type" value="0x4" token="true" />
+      	<Block name="Payload">
+      		<Choice name="SettingsChoice" minOccurs="0" maxOccurs="-1">
+	      		<Block name="SETTINGS_HEADER_TABLE_SIZE" ref="GenericSetting">
+	      			<Number size="16" name="Id" value="0x1" token="true"/>
+	      		</Block>
+	      		<Block name="SETTINGS_ENABLE_PUSH" ref="GenericSetting">
+	      			<Number size="16" name="Id" value="0x2" token="true"/>
+	      		</Block>
+	      		<Block name="SETTINGS_MAX_CONCURRENT_STREAMS" ref="GenericSetting">
+	      			<Number size="16" name="Id" value="0x3" token="true"/>
+	      		</Block>
+	      		<Block name="SETTINGS_INITIAL_WINDOW_SIZE" ref="GenericSetting">
+	      			<Number size="16" name="Id" value="0x4" token="true"/>
+	      		</Block>
+	      		<Block name="SETTINGS_MAX_FRAME_SIZE" ref="GenericSetting">
+	      			<Number size="16" name="Id" value="0x5" token="true"/>
+	      		</Block>
+	      		<Block name="SETTINGS_MAX_HEADER_LIST_SIZE" ref="GenericSetting">
+	      			<Number size="16" name="Id" value="0x6" token="true"/>
+	      		</Block>
+	      		<Block name="CatchAll" ref="GenericSetting"/>
+      		</Choice>
+      	</Block>
+      </DataModel>
+      
+     
+     
+     <DataModel name="PUSH_PROMISE" ref="Frame">
+      	<Number size="8" name="Type" value="0x5" token="true" />
+      	<Flags size="8" name="Flags">
+      		<Flag name="END_HEADERS" position="2" size="1" />
+      		<Flag name="PADDED" position="3" size="1" />
+      	</Flags>
+
+      	<Block name="Payload">
+      		      	
+      		<Choice name="PaddingChoice">
+      			<Block name="NoPad" constraint="int(self.find('Flags.PADDED').DefaultValue) == 0"/>
+      			<Block name="WithPad">
+      				<Number name="PadLength" size="8">
+      					<Relation type="size" of="Padding" />
+      				</Number>
+      				<Blob name="Padding">
+      					<Placement after="HeaderBlockFragment"/>
+      				</Blob>
+      			</Block>
+      		</Choice>
+      		
+      		<Number name="R" size="1" />
+      		<Number name="PromisedStreamId" size="31" />
+      		
+      		<Block name="HeaderBlockFragment" ref="HeaderData"/>
+      	
+      	</Block>
+      </DataModel>
+      
+      <DataModel name="PING" ref="Frame">
+      	<Number size="8" name="Type" value="0x6" token="true" />
+      	<Flags name="Flags" size="8">
+      		<Flag name="ACK" position="0" size="1" />
+      	</Flags>
+      	<Block name="Payload">
+      		<Number name="OpaqueData" size="64" />
+      	</Block>
+      </DataModel>
+      
+      <DataModel name="GOAWAY" ref="Frame">
+      	<Number size="8" name="Type" value="0x7" token="true" />
+      	<Block name="Payload">
+      		<Number name="R" size="1"/>
+      		<Number name="LastStreamId" size="31"/>
+      		<Number name="ErrorCode" size="32" />
+      		<Blob name="AdditionalDebugData" />	
+      	</Block>
+      </DataModel>
+      
+      <DataModel name="WINDOW_UPDATE" ref="Frame">
+      	<Number size="8" name="Type" value="0x8" token="true" />
+      	<Block name="Payload">
+      		<Number name="R" size="1"/>
+      		<Number name="WindowSizeIncrement" size="31" />
+      	</Block>
+      </DataModel>
+      
+      <DataModel name="CONTINUATION" ref="Frame">
+      	<Number size="8" name="Type" value="0x9" token="true" />
+      	<Flags  name="Flags" size="8">
+      		<Flag name="END_HEADERS" position="2" size="1" />
+      	</Flags>
+      	<Block name="Payload">
+      		<Block name="HeaderBlockFragment" ref="HeaderData"/>
+      	</Block>
+      </DataModel>
+      
+      
+      <DataModel name="AllFrames">
+      	<Choice name="FrameChoice">
+      		<Block name="DATA_Frame" ref="DATA" />
+      		<Block name="HEADERS_Frame" ref="HEADERS" />
+      		<Block name="PRIORITY_Frame" ref="PRIORITY" />
+      		<Block name="RST_STREAM_Frame" ref="RST_STREAM" />
+      		<Block name="SETTINGS_Frame" ref="SETTINGS" />
+      		<Block name="PUSH_PROMISE_Frame" ref="PUSH_PROMISE" />
+      		<Block name="PING_Frame" ref="PING" />
+      		<Block name="GOAWAY_Frame" ref="GOAWAY" />
+      		<Block name="WINDOW_UPDATE_Frame" ref="WINDOW_UPDATE" />
+      		<Block name="CONTINUATION_Frame" ref="CONTINUATION" />
+      		<Block name="CatchAll" ref="Frame"/>
+      	</Choice>
+      
+      </DataModel>
+      
+      <DataModel name="FrameCollection">
+      	<Block name="Frames" ref="AllFrames" minOccurs="0" maxOccurs="-1" />
+      </DataModel>
+      
+      
+      <DataModel name="EndOfConnection">
+      	<Choice name="FrameChoice" minOccurs="0" maxOccurs="-1">
+      		<Block name="DATA_Frame" ref="DATA" />
+      		<Block name="HEADERS_Frame" ref="HEADERS" />
+      		<Block name="PRIORITY_Frame" ref="PRIORITY" />
+      		<Block name="RST_STREAM_Frame" ref="RST_STREAM" />
+      		<Block name="SETTINGS_Frame" ref="SETTINGS" />
+      		<Block name="PUSH_PROMISE_Frame" ref="PUSH_PROMISE" />
+      		<Block name="PING_Frame" ref="PING" />
+      		<Block name="WINDOW_UPDATE_Frame" ref="WINDOW_UPDATE" />
+      		<Block name="CONTINUATION_Frame" ref="CONTINUATION" />
+      	</Choice>
+      	<Block name="GOAWAY_Frame" ref="GOAWAY" />
+      </DataModel>
+      
+      
+      
+      <DataModel name="Preamble">
+      	<Block name="Magic" ref="Magic"/>
+      	<Block name="SETTINGS" ref="SETTINGS" />
+      	<Block name="FrameCollection" ref="FrameCollection" />
+      </DataModel>
+      
+      <DataModel name="PreambleResponse">
+      	<Block name="OwnSettings" ref="SETTINGS" />
+      	<Block name="SettingsConfirm" ref="SETTINGS">
+      		<Number size="8" name="Flags" value="1" /> <!--  set ACK -->
+      	</Block>
+      </DataModel>
+      
+      <DataModel name="Client">
+      	<Block name="ThePreamble" ref="Preamble" />
+      	<Block name="Frames" ref="AllFrames" minOccurs="0" maxOccurs="-1" />
+      </DataModel>
+      
+      <DataModel name="Server">
+      	<Block name="ThePreambleResponse" ref="PreambleResponse" />
+      	<Block name="Frames" ref="AllFrames" minOccurs="0" maxOccurs="-1" /> 
+      </DataModel>
+      
+       
+</Peach>

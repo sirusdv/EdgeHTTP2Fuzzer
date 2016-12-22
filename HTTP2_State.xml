@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Peach xmlns="http://peachfuzzer.com/2012/Peach"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://peachfuzzer.com/2012/Peach peach.xsd"
+       author="Mikhail Davidov @sirus mdavidov@duo.com"
+       description="HTTP/2 Fuzzer"
+       version="1.0">
+       
+       <Include ns="HTTP2" src="file:##Peach.Cwd##/HTTP2_Data.xml"/>
+       
+       <StateModel name="Server" initialState="Initial">
+		<State name="Initial">
+			
+			
+			<Action type="call" method="StartIterationEvent" publisher="Peach.Agent" />
+			<Action type="open" publisher="TcpHandler" />
+			
+
+			<Action type="call" method="KillEdge" publisher="Peach.Agent" />
+			<Action type="call" method="StartLauncher" publisher="Peach.Agent" />
+			
+			<Action type="message" status="Waiting for connection." error="Error durring connection."/>
+			<Action type="accept" publisher="TcpHandler" />
+			
+			<Action type="message" status="Attaching debugger." error="Error durring debugging."/>
+			<Action type="call" method="StartDebugger" publisher="Peach.Agent" />
+			
+			
+			
+			<Action type="message" status="Starting handshake." error="Error durring handshake."/>
+			<Action name="In" type="input" publisher="TcpHandler">
+				<DataModel name="IncomingPreamble" ref="HTTP2:Preamble"/>
+			</Action>
+	
+			
+			<Action type="message" status="Sending handshake response." error="Error durring handshake."/>
+			<Action name="OutHandshake" type="output" publisher="TcpHandler">
+				<DataModel name="OutgoingPreamble" ref="HTTP2:PreambleResponse"/>
+				<Data fileName="Data/_WRITE0.bin" />
+			</Action>
+			
+			
+			<Action type="message" status="Listening for any responses." error="Error durring listening."/>
+			<Action name="InRequest" type="input" publisher="TcpHandler">
+				<DataModel name="SomeFrames" ref="HTTP2:FrameCollection"/>
+			</Action>
+			
+			
+			<Action type="message" status="Listening for any responses." error="Error durring listening."/>
+			<Action name="InRequest2" type="input" publisher="TcpHandler">
+				<DataModel name="SomeFrames2" ref="HTTP2:FrameCollection"/>
+			</Action>
+			
+						
+			<Action type="message" status="Sending request response." error="Error durring response."/>
+			<Action name="OutResponse" type="output" publisher="TcpHandler">
+				<DataModel name="OutgoingResponse" ref="HTTP2:FrameCollection" />
+				<Data fileName="Data/_WRITE1.bin" />
+			</Action>
+			
+			
+			<Action type="message" status="Sending GOAWAY." error="Error durring GOAWAY."/>
+			<Action name="OutGOAWAY" type="output" publisher="TcpHandler">
+				<DataModel name="OutGOAWAY" ref="HTTP2:GOAWAY" />
+			</Action>
+			
+			
+			<Action type="message" status="Listening for any responses." error="Error durring listening."/>
+			<Action name="InFollowup" type="input" publisher="TcpHandler">
+				<DataModel name="EndOfConnection" ref="HTTP2:FrameCollection"/>
+			</Action>
+			
+			<!--Action type="call" method="SoftKillEdge" publisher="Peach.Agent"/-->
+					
+			<Action type="call" method="ExitIterationEvent" publisher="Peach.Agent" />
+
+			
+		</State>
+       
+       </StateModel>
+       
+</Peach>
