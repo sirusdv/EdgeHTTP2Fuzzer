@@ -3,7 +3,9 @@
 
 :fire: To make use of this Peach pit you must have a commercial copy of the [Peach Fuzzer](https://peachfuzzer.com). :fire:
 
-This peach pit implements the HTTP/2 protocol ([RFC-7540](https://tools.ietf.org/html/rfc7540)) and is targetted at Microsoft Edge. It was developed as part of a [Duo Labs](https://duo.com/labs) research project and has been run through about 150,000 iterations. Traffic samples within this release were generated with the use of the [h2o](https://github.com/h2o/h2o) server. With a little bit of work and understanding of the protocol, it should be retargetable to Firefox/Chrome.
+Here at [Duo Labs](https://duo.com/labs) we believe that open sourcing security research tools helps the the greater research community push technology forward. If you find this release useful please consider joining us in sharing your tools which are typically considered proprietary with the public in the spirit of bettering security for everyone. 
+
+This peach pit implements the HTTP/2 protocol ([RFC-7540](https://tools.ietf.org/html/rfc7540)) and is targetted at Microsoft Edge. It was developed as part of a Duo Labs research project and has been run through about 150,000 iterations. Traffic samples within this release were generated with the use of the [h2o](https://github.com/h2o/h2o) server. With a little bit of work and understanding of the protocol, it should be retargetable to Firefox/Chrome.
 
 -- [@sirus](https://twitter.com/sirus)
 
